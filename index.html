@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <h1>YouTube Comment Sentiment Analysis</h1>
+    <style>
+        h1{
+            text-align: center;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center horizontally */
+            justify-content: center; /* Center vertically */
+            min-height: 100vh; /* Ensure the form stays in the center */
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center the form's content horizontally */
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+            width: 300px; /* Adjust width as needed */
+            box-sizing: border-box; /* Prevent content overflow */
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px;
+            height: 300px; /* Restrict height to avoid scrolling */
+            overflow: hidden; /* Prevent chart overflow */
+        }
+
+        canvas {
+            width: 300px !important; /* Fixed width */
+            height: 300px !important; /* Fixed height */
+        }
+    </style>
+</head>
+<body>
+    <form id="sentimentForm">
+        <label for="youtubeUrl">YouTube Video URL:</label>
+        <input type="text" id="youtubeUrl" name="url" required>
+        <button type="submit">Analyze</button>
+    </form>
+    <p id="result"></p>
+    <div id="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <script>
+        document.getElementById('sentimentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('youtubeUrl').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Analyzing...';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+
+                const data = await response.json();
+
+                // Extract sentiment values
+                const positive = data.positive;
+                const negative = data.negative;
+                const neutral = data.neutral;
+
+                // Update result text
+                resultDiv.innerHTML = `
+                    Positive: ${positive}
+                    Negative: ${negative}
+                    Neutral: ${neutral}<br>
+                    Total Comments: ${data.total_comments}
+                `;
+
+                // Prepare data for the chart
+                const xValues = ["Positive", "Negative", "Neutral"];
+                const yValues = [positive, negative, neutral];
+                const barColors = ["#00aba9", "#b91d47", "#2b5797"];
+
+                // Render the chart
+                new Chart("myChart", {
+                    type: "pie",
+                    data: {
+                        labels: xValues,
+                        datasets: [{
+                            backgroundColor: barColors,
+                            data: yValues
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true, // Keeps the aspect ratio
+                        title: {
+                            display: true,
+                            text: "Sentiment Analysis Results"
+                        }
+                    }
+                });
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
