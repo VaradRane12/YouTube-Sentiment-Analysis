@@ -1,0 +1,9 @@
+Flask==2.3.2
+Flask-Cors==3.0.10
+transformers==4.34.0
+torch==2.0.1
+scipy==1.11.3
+emoji==2.8.0
+google-api-python-client==2.102.0
+matplotlib==3.8.0
+vaderSentiment==3.3.2
