@@ -1,20 +1,22 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from scipy.special import softmax
-from flask_cors import CORS
 from googleapiclient.discovery import build
+from dotenv import load_dotenv
+import os
 import re
 import emoji
 
-app = Flask(__name__)
-CORS(app)
-# Initialize the model and tokenizer
-MODEL = "cardiffnlp/twitter-roberta-base-sentiment"
-tokenizer = AutoTokenizer.from_pretrained(MODEL)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL)
+# Load environment variables from .env file
+load_dotenv()
 
-# YouTube API Key
-API_KEY = 'AIzaSyAJrgIM-N5xwEOgc5xc2uBlJQxAwJ2y7iY'  # Replace with your API key
+# Get API key from environment variables
+API_KEY = os.getenv('YOUTUBE_API_KEY')
+if not API_KEY:
+    raise ValueError("YouTube API key is missing. Please set it in the .env file.")
+
+# Initialize YouTube API
 youtube = build('youtube', 'v3', developerKey=API_KEY)
 
 # Helper Function: Fetch comments from YouTube
