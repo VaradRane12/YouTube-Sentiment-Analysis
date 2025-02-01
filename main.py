@@ -8,11 +8,9 @@ import os
 import re
 import emoji
 
-# Load environment variables from .env file
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
-# Initialize the model and tokenizer
 MODEL = "cardiffnlp/twitter-roberta-base-sentiment"
 tokenizer = AutoTokenizer.from_pretrained(MODEL)
 model = AutoModelForSequenceClassification.from_pretrained(MODEL)
@@ -21,9 +19,7 @@ API_KEY = os.getenv('YOUTUBE_API_KEY')
 if not API_KEY:
     raise ValueError("YouTube API key is missing. Please set it in the .env file.")
 
-# Initialize YouTube API
 youtube = build('youtube', 'v3', developerKey=API_KEY)
-# Helper Function: Fetch comments from YouTube
 def fetch_comments(video_id, uploader_channel_id, max_comments=600):
     comments = []
     next_page_token = None
@@ -52,9 +48,8 @@ def fetch_comments(video_id, uploader_channel_id, max_comments=600):
             break
     return comments
 
-# Helper Function: Analyze sentiment using Roberta
 def polarity_scores_roberta(comment):
-    comment = comment[:512]  # Ensure it fits model input size
+    comment = comment[:512] 
     encoded_text = tokenizer(comment, return_tensors='pt')
     output = model(**encoded_text)
     scores = output[0][0].detach().numpy()
@@ -65,7 +60,6 @@ def polarity_scores_roberta(comment):
         'positive': scores[2]
     }
 
-# API Endpoint
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
@@ -74,18 +68,14 @@ def analyze():
         if not video_url:
             return jsonify({"error": "YouTube video URL is required"}), 400
 
-        # Extract video ID
         video_id = video_url.split("?v=")[-1] if "?v=" in video_url else video_url[-11:]
 
-        # Get the channel ID of the video uploader
         video_response = youtube.videos().list(part='snippet', id=video_id).execute()
         video_snippet = video_response['items'][0]['snippet']
         uploader_channel_id = video_snippet['channelId']
 
-        # Fetch and filter comments
         comments = fetch_comments(video_id, uploader_channel_id)
 
-        # Analyze sentiments
         positive, negative, neutral = 0, 0, 0
         pos,neg,neu = [],[],[]
         for comment in comments:
@@ -100,7 +90,6 @@ def analyze():
                 neutral += 1
                 neg.append(neu)
 
-        # Prepare response
         total_comments = len(comments)
         result = {
             "positive": positive,
@@ -119,6 +108,5 @@ def analyze():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Run the app
 if __name__ == '__main__':
     app.run(debug=True)
